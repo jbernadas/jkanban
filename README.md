@@ -1,91 +1,111 @@
 # jKanban
 
-A simple Tauri desktop kanban board with yellow sticky-note cards.
+A simple desktop kanban board for Linux, with yellow sticky-note cards.
 
 - Up to 8 projects, each on its own tab. Click + to add one, double-click a tab to rename it.
 - Drag cards between and within columns; drag a column by its header to reorder.
 - Click a card (or press Enter) to edit or delete it. Alt + arrow keys move a focused card.
-- The board is saved to `board.json` in the app data directory (`~/.local/share/com.jbernadas.jkanban/` on Linux).
+- Your boards are saved to `~/.local/share/com.jbernadas.jkanban/board.json`.
 
-## Build with Docker
+## Install
 
-Needs only Docker (with BuildKit). No Rust or Node toolchain is required on the host.
+Download the file for your distro from the [latest release](https://github.com/jbernadas/jkanban/releases/latest). jKanban needs a 64-bit distro from about 2022 or later (for example Ubuntu 22.04, Debian 12, or a current Fedora).
 
-```sh
-npm run docker:build   # or: docker build --target export --output type=local,dest=release .
-```
+### Debian, Ubuntu, Linux Mint (.deb)
 
-This writes `.deb`, `.rpm` and `.AppImage` bundles to `release/`. To build only some of them, e.g. if GitHub is down (the AppImage step downloads tools from it), run `docker build --build-arg BUNDLES=deb,rpm --target export --output type=local,dest=release .` Rust and npm caches persist between builds, so rebuilds are much faster.
-
-## Install, update and remove
-
-Build the bundles first (see above), then use the one that fits your distro. All three leave your board alone: it lives in `~/.local/share/com.jbernadas.jkanban/`, outside the package.
-
-To update, bump `version` in `src-tauri/tauri.conf.json` before rebuilding. apt and dnf skip a package whose version is already installed. To reinstall a rebuild without changing the version, use `sudo apt install --reinstall ./release/<file>.deb` or `sudo dnf reinstall ./release/<file>.rpm`.
-
-### Debian / Ubuntu (.deb)
-
-Installs `/usr/bin/jkanban` and a jKanban entry in the app menu.
+Double-click `jkanban_<version>_amd64.deb` to open it in your software installer, or run:
 
 ```sh
-# Install
-sudo apt install ./release/jkanban_0.1.0_amd64.deb
-
-# Update: rebuild, then install the new .deb over the old one
-sudo apt install ./release/jkanban_<version>_amd64.deb
-
-# Remove
-sudo apt remove jkanban
+sudo apt install ./jkanban_<version>_amd64.deb
 ```
 
-### Fedora / RHEL / openSUSE (.rpm)
+apt may print a note that the download was "performed unsandboxed as root". That's normal for a file in your home folder and doesn't affect the install.
+
+### Fedora, RHEL, openSUSE (.rpm)
 
 ```sh
-# Install
-sudo dnf install ./release/jkanban-0.1.0-1.x86_64.rpm
-
-# Update: rebuild, then upgrade to the new .rpm
-sudo dnf upgrade ./release/jkanban-<version>-1.x86_64.rpm
-
-# Remove
-sudo dnf remove jkanban
+sudo dnf install ./jkanban-<version>-1.x86_64.rpm      # Fedora / RHEL
+sudo zypper install ./jkanban-<version>-1.x86_64.rpm   # openSUSE
 ```
-
-On openSUSE, use `sudo zypper install` / `sudo zypper remove` instead.
 
 ### Any distro (.AppImage)
 
-An AppImage is a single file that runs without installing. It doesn't add an app-menu entry.
+An AppImage runs without installing. It doesn't add an app-menu entry.
 
 ```sh
-# Install
-mkdir -p ~/Applications
-cp release/jkanban_0.1.0_amd64.AppImage ~/Applications/jkanban.AppImage
-chmod +x ~/Applications/jkanban.AppImage
-~/Applications/jkanban.AppImage
-
-# Update: rebuild, then copy the new AppImage over the old one
-cp release/jkanban_<version>_amd64.AppImage ~/Applications/jkanban.AppImage
-
-# Remove
-rm ~/Applications/jkanban.AppImage
+chmod +x jkanban_<version>_amd64.AppImage
+./jkanban_<version>_amd64.AppImage
 ```
 
-If it fails to start with a FUSE error, install `libfuse2` (`sudo apt install libfuse2t64` on Ubuntu 24.04+, `libfuse2` on older releases).
+If it fails with a FUSE error, install `libfuse2` (`sudo apt install libfuse2t64` on Ubuntu 24.04 and later, `libfuse2` on older releases).
 
-### Deleting your board
+### Checking your download
 
-Removing the app keeps your board. To delete it too:
+Each release has a `SHA256SUMS` file. Download it next to the file you picked, then run:
+
+```sh
+sha256sum -c SHA256SUMS --ignore-missing
+```
+
+It should print `OK` for your file.
+
+## Update
+
+Download the newer release and install it the same way. It replaces the old version, and your boards are kept. With the AppImage, just use the new file.
+
+## Remove
+
+```sh
+sudo apt remove jkanban    # .deb
+sudo dnf remove jkanban    # .rpm (openSUSE: sudo zypper remove jkanban)
+```
+
+For the AppImage, delete the file.
+
+Removing the app keeps your boards. To delete them too:
 
 ```sh
 rm -rf ~/.local/share/com.jbernadas.jkanban
 ```
 
-### Launching from VS Code's terminal
+## Troubleshooting
 
-If VS Code is installed as a snap, the .deb/.rpm build may crash when started from its integrated terminal (`symbol lookup error ... __libc_pthread_init`), because the snap's library paths leak into it. Start it from the app menu or a regular terminal instead. The AppImage isn't affected.
+**Crashes when started from VS Code's terminal** (`symbol lookup error ... __libc_pthread_init`): if VS Code is installed as a snap, its library paths leak into programs started from its terminal. Start jKanban from the app menu or a regular terminal instead. The AppImage isn't affected.
 
-## Develop locally
+## Build from source
+
+### With Docker
+
+Needs only Docker (with BuildKit). No Rust or Node toolchain is required on the host.
+
+```sh
+npm run docker:build
+```
+
+This writes `.deb`, `.rpm` and `.AppImage` bundles to `release/`. To build only some of them, e.g. if GitHub is down (the AppImage step downloads tools from it), run `docker build --build-arg BUNDLES=deb,rpm --target export --output type=local,dest=release .` Rust and npm caches persist between builds, so rebuilds are much faster.
+
+apt and dnf skip a package whose version is already installed, so bump `version` in `package.json` before rebuilding. To reinstall a build without changing the version, use `sudo apt install --reinstall ./<file>.deb` or `sudo dnf reinstall ./<file>.rpm`.
+
+### Offline
+
+Each release also has `jkanban-<version>-vendor.tar.xz`, for builds without network access (such as distro packaging). It holds the Rust dependencies and the prebuilt web UI, so Node isn't needed. Extract it over the release's source tarball (both unpack to `jkanban-<version>/`), install the [Tauri Linux prerequisites](https://v2.tauri.app/start/prerequisites/#linux) and Rust, then:
+
+```sh
+cd jkanban-<version>/src-tauri
+cargo build --release --offline --locked --features tauri/custom-protocol
+```
+
+The program is `target/release/jkanban`. `src-tauri/jkanban.desktop` is its app-menu entry and `src-tauri/icons/` has its icons.
+
+### Develop locally
 
 `npm run dev` serves the UI in a browser at http://localhost:1420, saving to localStorage.
 `npm run tauri dev` runs the real desktop app; it needs the Rust toolchain and the [Tauri Linux prerequisites](https://v2.tauri.app/start/prerequisites/#linux).
+
+## Releasing
+
+Pushing a version tag builds the bundles on GitHub and attaches them to a draft release (see `.github/workflows/release.yml`):
+
+1. Bump `version` in `package.json` and commit.
+2. `git tag v<version> && git push origin main v<version>`. The tag must match `package.json`, or the build stops.
+3. When the workflow finishes, open the draft on the [Releases page](https://github.com/jbernadas/jkanban/releases), check it, and click **Publish release**.
