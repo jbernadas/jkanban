@@ -1,0 +1,87 @@
+# Builds the Linux bundles and attaches them to a draft GitHub release.
+#
+#   1. Bump "version" in package.json and commit.
+#   2. git tag v<version> && git push origin v<version>
+#   3. Review the draft on GitHub's Releases page, then publish it.
+
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write # to create the release
+
+jobs:
+  release:
+    # Bundles link against the build machine's glibc, so the oldest supported
+    # Ubuntu gives builds that run on the widest range of distros.
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Check the tag matches package.json
+        run: |
+          version=$(node -p "require('./package.json').version")
+          if [ "$GITHUB_REF_NAME" != "v$version" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME doesn't match package.json version $version"
+            exit 1
+          fi
+          echo "VERSION=$version" >> "$GITHUB_ENV"
+
+      # Tauri v2 Linux build deps: https://v2.tauri.app/start/prerequisites/#linux
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            libwebkit2gtk-4.1-dev libxdo-dev libssl-dev libayatana-appindicator3-dev \
+            librsvg2-dev file rpm
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - run: npm ci
+
+      - name: Build .deb, .rpm and .AppImage
+        env:
+          # linuxdeploy (used for the AppImage) is an AppImage itself; runners have no FUSE.
+          APPIMAGE_EXTRACT_AND_RUN: 1
+          NO_STRIP: true
+        run: npx tauri build --bundles deb,rpm,appimage
+
+      # For builds that can't reach the network, such as SlackBuilds.org:
+      # the Rust crates plus the prebuilt web UI (so Node isn't needed).
+      # Extract it over the tag's source tarball; both unpack to jkanban-<version>/.
+      - name: Build vendored source tarball
+        run: |
+          mkdir -p src-tauri/.cargo out
+          (cd src-tauri && cargo vendor --locked ../vendor) > src-tauri/.cargo/config.toml
+          tar -cJf "out/jkanban-$VERSION-vendor.tar.xz" \
+            --transform "s,^,jkanban-$VERSION/," \
+            vendor dist src-tauri/.cargo/config.toml
+
+      - name: Collect files and checksums
+        run: |
+          find src-tauri/target/release/bundle -maxdepth 2 \
+            \( -name '*.deb' -o -name '*.rpm' -o -name '*.AppImage' \) -exec cp {} out/ \;
+          cd out
+          sha256sum -- * > SHA256SUMS
+          cat SHA256SUMS
+
+      - name: Create draft release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" out/* \
+            --draft \
+            --title "jKanban $VERSION" \
+            --generate-notes
