@@ -56,9 +56,15 @@ function h<K extends keyof HTMLElementTagNameMap>(
 
 const statusEl = h("span", { class: "status", role: "status" });
 
-function setStatus(text: string, error = false) {
+let statusTimer: ReturnType<typeof setTimeout> | undefined;
+
+/** Errors stay until the next status; `fade` clears routine messages after 2s. */
+function setStatus(text: string, { error = false, fade = false } = {}) {
+  clearTimeout(statusTimer);
   statusEl.textContent = text;
+  statusEl.title = text; // full text on hover when a long message is cut off
   statusEl.classList.toggle("error", error);
+  if (fade) statusTimer = setTimeout(() => setStatus(""), 2000);
 }
 
 function commit() {
@@ -66,8 +72,8 @@ function commit() {
   if (!canSave) return;
   setStatus("Saving…");
   saveWorkspace(workspace).then(
-    () => setStatus(inTauri ? "Saved" : "Saved to browser storage (preview mode)"),
-    (err) => setStatus(`Save failed: ${err}`, true),
+    () => setStatus(inTauri ? "Saved" : "Saved to browser storage (preview mode)", { fade: true }),
+    (err) => setStatus(`Save failed: ${err}`, { error: true }),
   );
 }
 
@@ -572,9 +578,10 @@ function renderTab(project: Project): HTMLElement {
   );
 }
 
-function renderTabs(): HTMLElement {
+/** The tab row: project tabs on the left, save status at the right end. */
+function renderTabBar(): HTMLElement {
   const full = workspace.projects.length >= MAX_PROJECTS;
-  return h(
+  const tabs = h(
     "nav",
     { class: "tabs", "aria-label": "Projects" },
     ...workspace.projects.map(renderTab),
@@ -590,6 +597,7 @@ function renderTabs(): HTMLElement {
       "+",
     ),
   );
+  return h("header", { class: "tabbar" }, tabs, statusEl);
 }
 
 function render() {
@@ -604,7 +612,7 @@ function render() {
   wireBoardDropTarget(boardEl, addColumnBtn);
 
   const scroll = app.querySelector(".board")?.scrollLeft ?? 0;
-  app.replaceChildren(h("header", { class: "topbar" }, h("h1", {}, "jKanban"), statusEl), renderTabs(), boardEl);
+  app.replaceChildren(renderTabBar(), boardEl);
   boardEl.scrollLeft = scroll;
 }
 
@@ -618,7 +626,7 @@ async function init() {
     // Never overwrite a board we couldn't read.
     canSave = false;
     workspace = createWorkspace({ id: uid(), name: "My board", columns: [] });
-    setStatus(`Couldn't load your board (${err}). Changes won't be saved.`, true);
+    setStatus(`Couldn't load your board (${err}). Changes won't be saved.`, { error: true });
   }
   board = workspace.projects.find((p) => p.id === workspace.activeProjectId)!;
   render();

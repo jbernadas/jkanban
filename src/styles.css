@@ -65,31 +65,42 @@ button.danger { color: var(--danger); }
 
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
-/* ---------- Top bar ---------- */
-
-.topbar {
-  display: flex;
-  align-items: baseline;
-  gap: 16px;
-  padding: 14px 20px 4px;
-}
-.topbar h1 { font-size: 18px; margin: 0; letter-spacing: -0.01em; }
-.status { color: var(--muted); font-size: 12px; }
-.status.error { color: var(--danger); }
-
 /* ---------- Project tabs ---------- */
 
 /* Folder tabs: every tab sits on a baseline, and the open tab takes the
    board's colour and breaks the line, so it reads as the front folder. */
-.tabs {
+.tabbar {
   display: flex;
   align-items: flex-end;
-  gap: 3px;
-  padding: 10px 20px 0;
-  overflow-x: auto;
+  gap: 16px;
+  padding-right: 20px;
   /* The baseline is painted as a background (not a border) so the open tab can cover it. */
   background: linear-gradient(to top, var(--border) 1px, transparent 1px);
 }
+.tabs {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+  /* Scrolling clips at the padding edge, so the padding leaves room for the open tab's glow. */
+  padding: 12px 0 0 20px;
+  overflow-x: auto;
+}
+
+/* Right end of the tab row. */
+.status {
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 50%;
+  align-self: center;
+  color: var(--muted);
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.status.error { color: var(--danger); }
 
 .tab {
   flex: 0 0 auto;
@@ -292,14 +303,14 @@ input.tab-rename {
   border: none;
   background: var(--surface);
   color: var(--muted);
-  font-size: 22px;
+  font-size: 15px;
   line-height: 1;
 }
 .add-tile:hover:not(:disabled) { color: var(--accent); box-shadow: var(--shadow); }
 .add-tile:disabled { opacity: 0.45; cursor: not-allowed; }
-.add-column { flex: 0 0 40px; height: 40px; margin-left: -2px; }
+.add-column { flex: 0 0 40px; height: 25px; margin-left: -2px; }
 /* Floats beside the tabs, clear of the baseline, rather than being a tab itself. */
-.add-tab { flex: 0 0 30px; height: 25px; width: 25px; align-self: center; margin-left: 6px; }
+.add-tab { flex: 0 0 30px; height: 20px; align-self: center; margin-left: 6px; }
 
 .composer { margin-top: 6px; display: flex; flex-direction: column; gap: 6px; }
 .composer textarea {

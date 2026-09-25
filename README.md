@@ -109,3 +109,9 @@ Pushing a version tag builds the bundles on GitHub and attaches them to a draft 
 1. Bump `version` in `package.json` and commit.
 2. `git tag v<version> && git push origin main v<version>`. The tag must match `package.json`, or the build stops.
 3. When the workflow finishes, open the draft on the [Releases page](https://github.com/jbernadas/jkanban/releases), check it, and click **Publish release**.
+
+## License
+
+Copyright (C) 2026 jbernadas
+
+jKanban is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. It is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See [LICENSE](LICENSE) for the full text.

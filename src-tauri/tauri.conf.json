@@ -36,10 +36,16 @@
     ],
     "linux": {
       "deb": {
-        "desktopTemplate": "jkanban.desktop"
+        "desktopTemplate": "jkanban.desktop",
+        "files": {
+          "/usr/share/doc/jkanban/copyright": "../LICENSE"
+        }
       },
       "rpm": {
-        "desktopTemplate": "jkanban.desktop"
+        "desktopTemplate": "jkanban.desktop",
+        "files": {
+          "/usr/share/licenses/jkanban/LICENSE": "../LICENSE"
+        }
       }
     }
   }

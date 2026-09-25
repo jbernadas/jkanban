@@ -3,6 +3,7 @@ name = "jkanban"
 version = "0.1.0"
 description = "A kanban board"
 authors = ["jbernadas"]
+license = "GPL-3.0-or-later"
 edition = "2021"
 
 [lib]
