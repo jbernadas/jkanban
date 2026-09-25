@@ -409,7 +409,11 @@ function renderColumn(column: Column): HTMLElement {
 function render() {
   // Don't rebuild the DOM mid-drag: it would destroy the element being dragged.
   if (drag) return;
-  const addColumnBtn = h("button", { class: "add-column", onclick: addColumn }, "+ Add column");
+  const addColumnBtn = h(
+    "button",
+    { class: "add-column", "aria-label": "Add column", title: "Add column", onclick: addColumn },
+    "+",
+  );
   const boardEl = h("main", { class: "board" }, ...board.columns.map(renderColumn), addColumnBtn);
   wireBoardDropTarget(boardEl, addColumnBtn);
 

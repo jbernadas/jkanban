@@ -86,7 +86,7 @@ button.danger { color: var(--danger); }
   overflow-x: auto;
 }
 
-.column, .column-placeholder, .add-column { flex: 0 0 280px; }
+.column, .column-placeholder { flex: 0 0 280px; }
 
 .column {
   display: flex;
@@ -208,7 +208,7 @@ button.danger { color: var(--danger); }
 
 /* ---------- Adding things ---------- */
 
-.add-card, .add-column {
+.add-card {
   border: none;
   background: transparent;
   color: var(--muted);
@@ -218,10 +218,15 @@ button.danger { color: var(--danger); }
 }
 .add-card:hover { background: var(--card); color: var(--text); }
 .add-column {
-  margin-top: 0;
+  flex: 0 0 40px;
+  height: 40px;
+  padding: 0;
   border: 2px dashed var(--border);
   border-radius: var(--radius);
-  padding: 12px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 22px;
+  line-height: 1;
 }
 .add-column:hover { border-color: var(--accent); color: var(--accent); }
 

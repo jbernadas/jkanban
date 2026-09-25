@@ -1,5 +1,5 @@
 import { invoke, isTauri } from "@tauri-apps/api/core";
-import { Board, createDefaultBoard, parseBoard } from "./board";
+import { Workspace, createDefaultWorkspace, parseWorkspace } from "./board";
 
 const LOCAL_KEY = "jkanban.board";
 
@@ -16,17 +16,17 @@ async function writeRaw(json: string): Promise<void> {
   localStorage.setItem(LOCAL_KEY, json);
 }
 
-/** Returns the saved board, or a starter board on first launch. Throws if saved data is unreadable. */
-export async function loadBoard(): Promise<Board> {
+/** Returns the saved workspace, or a starter one on first launch. Throws if saved data is unreadable. */
+export async function loadWorkspace(): Promise<Workspace> {
   const raw = await readRaw();
-  return raw === null ? createDefaultBoard() : parseBoard(raw);
+  return raw === null ? createDefaultWorkspace() : parseWorkspace(raw);
 }
 
 // Saves are chained so they always land on disk in the order they were made.
 let queue: Promise<void> = Promise.resolve();
 
-export function saveBoard(board: Board): Promise<void> {
-  const json = JSON.stringify(board, null, 2);
+export function saveWorkspace(workspace: Workspace): Promise<void> {
+  const json = JSON.stringify(workspace, null, 2);
   const next = queue.then(() => writeRaw(json));
   queue = next.catch(() => {});
   return next;
