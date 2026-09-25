@@ -1,7 +1,7 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "jkanban",
-  "version": "0.1.0",
+  "version": "../package.json",
   "identifier": "com.jbernadas.jkanban",
   "build": {
     "beforeDevCommand": "npm run dev",
@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "jkanban",
+        "title": "jKanban",
         "width": 1200,
         "height": 760,
         "minWidth": 480,
@@ -33,6 +33,14 @@
       "icons/128x128@2x.png",
       "icons/icon.icns",
       "icons/icon.ico"
-    ]
+    ],
+    "linux": {
+      "deb": {
+        "desktopTemplate": "jkanban.desktop"
+      },
+      "rpm": {
+        "desktopTemplate": "jkanban.desktop"
+      }
+    }
   }
 }

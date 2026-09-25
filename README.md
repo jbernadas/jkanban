@@ -2,6 +2,7 @@
 
 A simple Tauri desktop kanban board with yellow sticky-note cards.
 
+- Up to 8 projects, each on its own tab. Click + to add one, double-click a tab to rename it.
 - Drag cards between and within columns; drag a column by its header to reorder.
 - Click a card (or press Enter) to edit or delete it. Alt + arrow keys move a focused card.
 - The board is saved to `board.json` in the app data directory (`~/.local/share/com.jbernadas.jkanban/` on Linux).

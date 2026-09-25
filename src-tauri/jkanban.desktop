@@ -1,0 +1,9 @@
+[Desktop Entry]
+Categories=
+Comment=A kanban board
+Exec=jkanban
+StartupWMClass=jkanban
+Icon=jkanban
+Name=jKanban
+Terminal=false
+Type=Application

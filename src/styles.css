@@ -8,6 +8,7 @@
   --accent: #4f46e5;
   --accent-soft: rgba(79, 70, 229, 0.12);
   --danger: #d23a3a;
+  --on-danger: #fff;
   --shadow: 0 1px 2px rgba(20, 24, 40, 0.08), 0 1px 1px rgba(20, 24, 40, 0.04);
   --shadow-lift: 0 8px 20px rgba(20, 24, 40, 0.14);
   --radius: 10px;
@@ -35,6 +36,7 @@
     --accent: #a5a0ff;
     --accent-soft: rgba(165, 160, 255, 0.2);
     --danger: #ff8080;
+    --on-danger: #2b0a0a;
     --shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
     --shadow-lift: 0 8px 20px rgba(0, 0, 0, 0.4);
   }
@@ -74,6 +76,58 @@ button.danger { color: var(--danger); }
 .topbar h1 { font-size: 18px; margin: 0; letter-spacing: -0.01em; }
 .status { color: var(--muted); font-size: 12px; }
 .status.error { color: var(--danger); }
+
+/* ---------- Project tabs ---------- */
+
+.tabs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px 0;
+  overflow-x: auto;
+}
+
+.tab {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  height: 34px;
+  max-width: 220px;
+  background: var(--surface);
+  border-radius: var(--radius);
+  padding: 0 4px;
+}
+.tab.active { background: var(--card); box-shadow: inset 0 -2px 0 var(--accent), var(--shadow); }
+.tab-name {
+  min-width: 0;
+  border: none;
+  background: transparent;
+  padding: 0 8px;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.tab-name:hover { color: var(--text); }
+.tab.active .tab-name { color: var(--text); font-weight: 600; cursor: default; }
+input.tab-rename {
+  width: 180px;
+  border: 1px solid var(--accent);
+  background: var(--card);
+  padding: 0 12px;
+  font-weight: 600;
+  outline: none;
+}
+.delete-tab {
+  flex-shrink: 0;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  padding: 0 6px;
+  font-size: 16px;
+  line-height: 1.4;
+}
+.delete-tab:hover { color: var(--danger); }
 
 /* ---------- Board ---------- */
 
@@ -217,18 +271,22 @@ button.danger { color: var(--danger); }
   margin-top: 6px;
 }
 .add-card:hover { background: var(--card); color: var(--text); }
-.add-column {
-  flex: 0 0 40px;
-  height: 40px;
+/* The + buttons for new columns and projects share the column's look. */
+.add-tile {
+  display: grid;
+  place-items: center;
   padding: 0;
-  border: 2px dashed var(--border);
+  border: none;
   border-radius: var(--radius);
-  background: transparent;
+  background: var(--surface);
   color: var(--muted);
   font-size: 22px;
   line-height: 1;
 }
-.add-column:hover { border-color: var(--accent); color: var(--accent); }
+.add-tile:hover:not(:disabled) { color: var(--accent); box-shadow: var(--shadow); }
+.add-tile:disabled { opacity: 0.45; cursor: not-allowed; }
+.add-column { flex: 0 0 40px; height: 40px; }
+.add-tab { flex: 0 0 34px; height: 34px; }
 
 .composer { margin-top: 6px; display: flex; flex-direction: column; gap: 6px; }
 .composer textarea {
@@ -268,3 +326,7 @@ button.danger { color: var(--danger); }
 .editor input:focus, .editor textarea:focus { border-color: var(--accent); outline: none; }
 .editor-actions { display: flex; gap: 8px; margin-top: 4px; }
 .editor-actions .spacer { flex: 1; }
+.confirm { width: min(400px, calc(100vw - 32px)); }
+.confirm h2 { overflow-wrap: anywhere; }
+.confirm-message { margin: 0; color: var(--muted); }
+button.danger.solid { background: var(--danger); border-color: var(--danger); color: var(--on-danger); }

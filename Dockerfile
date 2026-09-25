@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1.7
 #
-# Builds jkanban's Linux desktop bundles (.deb, .rpm, .AppImage) in a container.
+# Builds jKanban's Linux desktop bundles (.deb, .rpm, .AppImage) in a container.
 #
 #   docker build --target export --output type=local,dest=release .
 #

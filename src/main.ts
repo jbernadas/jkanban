@@ -1,15 +1,31 @@
 import "./styles.css";
-import { Board, Card, Column, findCard, moveCard, moveColumn, uid } from "./board";
-import { inTauri, loadBoard, saveBoard } from "./storage";
+import {
+  Card,
+  Column,
+  MAX_PROJECTS,
+  Project,
+  Workspace,
+  createProject,
+  createWorkspace,
+  findCard,
+  moveCard,
+  moveColumn,
+  uid,
+} from "./board";
+import { inTauri, loadWorkspace, saveWorkspace } from "./storage";
 
 const app = document.querySelector<HTMLDivElement>("#app")!;
 
-let board: Board;
+let workspace: Workspace;
+/** The project whose tab is open. */
+let board: Project;
 let canSave = true;
 
 // UI state that must survive a re-render.
 let composer: { columnId: string; draft: string } | null = null;
-let confirmDeleteColumnId: string | null = null;
+/** Column waiting for a second click on its delete button. */
+let confirmDeleteId: string | null = null;
+let renamingProjectId: string | null = null;
 
 type Drag = { kind: "card" | "column"; id: string };
 let drag: Drag | null = null;
@@ -49,7 +65,7 @@ function commit() {
   render();
   if (!canSave) return;
   setStatus("Saving…");
-  saveBoard(board).then(
+  saveWorkspace(workspace).then(
     () => setStatus(inTauri ? "Saved" : "Saved to browser storage (preview mode)"),
     (err) => setStatus(`Save failed: ${err}`, true),
   );
@@ -69,21 +85,66 @@ function addColumn() {
   app.querySelector(".board")?.scrollTo({ left: Number.MAX_SAFE_INTEGER, behavior: "smooth" });
 }
 
-function deleteColumn(column: Column) {
-  if (column.cards.length > 0 && confirmDeleteColumnId !== column.id) {
-    confirmDeleteColumnId = column.id;
-    render();
-    setTimeout(() => {
-      if (confirmDeleteColumnId === column.id) {
-        confirmDeleteColumnId = null;
-        render();
-      }
-    }, 3000);
-    return;
+/**
+ * Deleting something that holds cards takes a second click within 3 seconds.
+ * Returns true when the delete should go ahead.
+ */
+function confirmDelete(id: string, hasCards: boolean): boolean {
+  if (!hasCards || confirmDeleteId === id) {
+    confirmDeleteId = null;
+    return true;
   }
-  confirmDeleteColumnId = null;
+  confirmDeleteId = id;
+  render();
+  setTimeout(() => {
+    if (confirmDeleteId === id) {
+      confirmDeleteId = null;
+      render();
+    }
+  }, 3000);
+  return false;
+}
+
+function deleteColumn(column: Column) {
+  if (!confirmDelete(column.id, column.cards.length > 0)) return;
   board.columns = board.columns.filter((c) => c.id !== column.id);
   commit();
+}
+
+const cardCount = (project: Project) => project.columns.reduce((n, c) => n + c.cards.length, 0);
+
+function switchProject(project: Project) {
+  workspace.activeProjectId = project.id;
+  board = project;
+  composer = null;
+  commit();
+  app.querySelector(".board")?.scrollTo({ left: 0 });
+}
+
+function addProject() {
+  if (workspace.projects.length >= MAX_PROJECTS) return;
+  const project = createProject("New project");
+  workspace.projects.push(project);
+  renamingProjectId = project.id;
+  switchProject(project);
+  focusSoon(".tab-rename", true);
+}
+
+async function deleteProject(project: Project) {
+  if (workspace.projects.length === 1) return;
+  const cards = cardCount(project);
+  const ok = await confirmDialog.ask(
+    `Delete project “${project.name}”?`,
+    cards > 0
+      ? `Its ${cards} card${cards === 1 ? "" : "s"} will be deleted too. This can't be undone.`
+      : "This can't be undone.",
+    "Delete project",
+  );
+  if (!ok || !workspace.projects.includes(project)) return;
+  const index = workspace.projects.indexOf(project);
+  workspace.projects.splice(index, 1);
+  if (project === board) switchProject(workspace.projects[Math.max(0, index - 1)]);
+  else commit();
 }
 
 function addCard(column: Column, title: string) {
@@ -156,6 +217,54 @@ const editor = (() => {
       dialog.returnValue = "";
       dialog.showModal();
       title.select();
+    },
+  };
+})();
+
+// ---------- Confirm dialog ----------
+
+const confirmDialog = (() => {
+  const heading = h("h2", {});
+  const message = h("p", { class: "confirm-message" });
+  const confirmBtn = h("button", { value: "confirm", class: "danger solid" });
+  let settle: ((ok: boolean) => void) | null = null;
+  const answer = (ok: boolean) => {
+    settle?.(ok);
+    settle = null;
+  };
+  const dialog = h(
+    "dialog",
+    // Escape. A late close from the previous question must not cancel a newly opened one.
+    { class: "editor confirm", onclose: () => dialog.open || answer(false) },
+    h(
+      "form",
+      {
+        method: "dialog",
+        // Answer on submit rather than on close: submit fires at once, while close is queued.
+        onsubmit: (e: SubmitEvent) => answer((e.submitter as HTMLButtonElement | null)?.value === "confirm"),
+      },
+      heading,
+      message,
+      h(
+        "div",
+        { class: "editor-actions" },
+        h("span", { class: "spacer" }),
+        // First in tab order, so it gets focus: Enter right away cancels.
+        h("button", { value: "cancel", autofocus: true }, "Cancel"),
+        confirmBtn,
+      ),
+    ),
+  );
+  document.body.append(dialog);
+
+  return {
+    /** Resolves true only if the user clicks the confirm button (Escape cancels). */
+    ask(title: string, text: string, confirmLabel: string): Promise<boolean> {
+      heading.textContent = title;
+      message.textContent = text;
+      confirmBtn.textContent = confirmLabel;
+      dialog.showModal();
+      return new Promise((resolve) => (settle = resolve));
     },
   };
 })();
@@ -374,7 +483,7 @@ function renderColumn(column: Column): HTMLElement {
     },
   });
 
-  const confirming = confirmDeleteColumnId === column.id;
+  const confirming = confirmDeleteId === column.id;
   const header = h(
     "header",
     { class: "column-header", title: "Drag to reorder columns" },
@@ -406,19 +515,96 @@ function renderColumn(column: Column): HTMLElement {
   return el;
 }
 
+function renderTab(project: Project): HTMLElement {
+  const active = project === board;
+  if (renamingProjectId === project.id) {
+    const finish = (save: boolean, refocus = true) => {
+      // Runs once: the re-render below removes the input, which can fire another blur.
+      if (renamingProjectId !== project.id) return;
+      renamingProjectId = null;
+      if (save) project.name = input.value.trim() || project.name;
+      commit();
+      if (refocus) focusSoon(".tab.active .tab-name");
+    };
+    const input = h("input", {
+      class: "tab tab-rename",
+      value: project.name,
+      "aria-label": "Project name",
+      maxLength: 40,
+      onkeydown: (e: KeyboardEvent) => {
+        if (e.key === "Enter") finish(true);
+        if (e.key === "Escape") finish(false);
+      },
+      onblur: () => finish(true, false), // keep focus wherever the user clicked
+    });
+    return input;
+  }
+
+  return h(
+    "div",
+    { class: active ? "tab active" : "tab" },
+    h(
+      "button",
+      {
+        class: "tab-name",
+        "aria-current": active ? "page" : "false",
+        title: active ? "Double-click to rename" : `Open ${project.name}`,
+        onclick: () => active || switchProject(project),
+        ondblclick: () => {
+          renamingProjectId = project.id;
+          render();
+          focusSoon(".tab-rename", true);
+        },
+      },
+      project.name,
+    ),
+    workspace.projects.length > 1 &&
+      h(
+        "button",
+        {
+          class: "delete-tab",
+          "aria-label": `Delete project ${project.name}`,
+          title: "Delete project",
+          onclick: () => deleteProject(project),
+        },
+        "×",
+      ),
+  );
+}
+
+function renderTabs(): HTMLElement {
+  const full = workspace.projects.length >= MAX_PROJECTS;
+  return h(
+    "nav",
+    { class: "tabs", "aria-label": "Projects" },
+    ...workspace.projects.map(renderTab),
+    h(
+      "button",
+      {
+        class: "add-tile add-tab",
+        "aria-label": "Add project",
+        title: full ? `You can have up to ${MAX_PROJECTS} projects` : "Add project",
+        disabled: full,
+        onclick: addProject,
+      },
+      "+",
+    ),
+  );
+}
+
 function render() {
   // Don't rebuild the DOM mid-drag: it would destroy the element being dragged.
   if (drag) return;
   const addColumnBtn = h(
     "button",
-    { class: "add-column", "aria-label": "Add column", title: "Add column", onclick: addColumn },
+    { class: "add-tile add-column", "aria-label": "Add column", title: "Add column", onclick: addColumn },
     "+",
   );
   const boardEl = h("main", { class: "board" }, ...board.columns.map(renderColumn), addColumnBtn);
   wireBoardDropTarget(boardEl, addColumnBtn);
 
   const scroll = app.querySelector(".board")?.scrollLeft ?? 0;
-  app.replaceChildren(h("header", { class: "topbar" }, h("h1", {}, "jkanban"), statusEl), boardEl);
+  app.replaceChildren(h("header", { class: "topbar" }, h("h1", {}, "jKanban"), statusEl), renderTabs(), boardEl);
   boardEl.scrollLeft = scroll;
 }
 
@@ -426,14 +612,15 @@ function render() {
 
 async function init() {
   try {
-    board = await loadBoard();
+    workspace = await loadWorkspace();
     setStatus(inTauri ? "" : "Browser preview — saving to localStorage");
   } catch (err) {
     // Never overwrite a board we couldn't read.
     canSave = false;
-    board = { version: 1, columns: [] };
+    workspace = createWorkspace({ id: uid(), name: "My board", columns: [] });
     setStatus(`Couldn't load your board (${err}). Changes won't be saved.`, true);
   }
+  board = workspace.projects.find((p) => p.id === workspace.activeProjectId)!;
   render();
 }
 
