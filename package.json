@@ -1,0 +1,21 @@
+{
+  "name": "jkanban",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "tauri": "tauri",
+    "docker:build": "rm -rf release && docker build --target export --output type=local,dest=release ."
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2.11.5",
+    "typescript": "^5.9.3",
+    "vite": "^8.3.1"
+  },
+  "dependencies": {
+    "@tauri-apps/api": "^2.11.1"
+  }
+}
