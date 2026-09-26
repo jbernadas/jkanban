@@ -4,3 +4,7 @@ src-tauri/target/
 src-tauri/gen/schemas/
 *.log
 release/
+
+# Slackware: downloaded sources and the SBo submission tarball
+packaging/slackware/jkanban/*.tar.*
+packaging/slackware/jkanban.tar.gz

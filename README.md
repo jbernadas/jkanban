@@ -109,6 +109,7 @@ Pushing a version tag builds the bundles on GitHub and attaches them to a draft 
 1. Bump `version` in `package.json` and commit.
 2. `git tag v<version> && git push origin main v<version>`. The tag must match `package.json`, or the build stops.
 3. When the workflow finishes, open the draft on the [Releases page](https://github.com/jbernadas/jkanban/releases), check it, and click **Publish release**.
+4. For SlackBuilds.org, once the release is published: run `packaging/slackware/prepare.sh <version>`, test-build on Slackware 15.0 with `packaging/slackware/jkanban/jkanban.SlackBuild` (as root), then upload `packaging/slackware/jkanban.tar.gz` through the form on slackbuilds.org.
 
 ## License
 

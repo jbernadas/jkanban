@@ -1,0 +1,19 @@
+# HOW TO EDIT THIS FILE:
+# The "handy ruler" below makes it easier to edit a package description.
+# Line up the first '|' above the ':' following the base package name, and
+# the '|' on the right side marks the last column you can put a character in.
+# You must make exactly 11 lines for the formatting to be correct.  It's also
+# customary to leave one space after the ':' except on otherwise blank lines.
+
+       |-----handy-ruler------------------------------------------------------|
+jkanban: jkanban (desktop kanban board with sticky-note cards)
+jkanban:
+jkanban: jKanban is a simple desktop kanban board. Cards look like yellow
+jkanban: sticky notes and are dragged between columns. Work can be split
+jkanban: into up to 8 projects, each on its own tab, and everything is saved
+jkanban: automatically to a file in your home directory.
+jkanban:
+jkanban: Homepage: https://github.com/jbernadas/jkanban
+jkanban:
+jkanban:
+jkanban:
