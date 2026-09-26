@@ -146,6 +146,7 @@ async function deleteProject(project: Project) {
       ? `Its ${cards} card${cards === 1 ? "" : "s"} will be deleted too. This can't be undone.`
       : "This can't be undone.",
     "Delete project",
+    project.name,
   );
   if (!ok || !workspace.projects.includes(project)) return;
   const index = workspace.projects.indexOf(project);
@@ -234,6 +235,22 @@ const confirmDialog = (() => {
   const heading = h("h2", {});
   const message = h("p", { class: "confirm-message" });
   const confirmBtn = h("button", { value: "confirm", class: "danger solid" });
+  // Optional safeguard: the confirm button stays disabled until this text is typed.
+  let required = "";
+  const matches = () => typed.value.trim() === required;
+  const typedName = h("strong", {});
+  const typed = h("input", {
+    autocomplete: "off",
+    spellcheck: false,
+    oninput: () => (confirmBtn.disabled = !matches()),
+    // Enter would otherwise submit via the first button, Cancel.
+    onkeydown: (e: KeyboardEvent) => {
+      if (e.key !== "Enter") return;
+      e.preventDefault();
+      if (matches()) confirmBtn.click();
+    },
+  });
+  const typedLabel = h("label", {}, h("span", {}, "Type ", typedName, " to confirm"), typed);
   let settle: ((ok: boolean) => void) | null = null;
   const answer = (ok: boolean) => {
     settle?.(ok);
@@ -252,6 +269,7 @@ const confirmDialog = (() => {
       },
       heading,
       message,
+      typedLabel,
       h(
         "div",
         { class: "editor-actions" },
@@ -265,12 +283,19 @@ const confirmDialog = (() => {
   document.body.append(dialog);
 
   return {
-    /** Resolves true only if the user clicks the confirm button (Escape cancels). */
-    ask(title: string, text: string, confirmLabel: string): Promise<boolean> {
+    /** Resolves true only if the user clicks the confirm button (Escape cancels).
+        With `requireText`, the button is enabled only once that text is typed. */
+    ask(title: string, text: string, confirmLabel: string, requireText = ""): Promise<boolean> {
       heading.textContent = title;
       message.textContent = text;
       confirmBtn.textContent = confirmLabel;
+      required = requireText;
+      typedName.textContent = requireText;
+      typed.value = "";
+      typedLabel.hidden = !requireText;
+      confirmBtn.disabled = !!requireText;
       dialog.showModal();
+      if (requireText) typed.focus();
       return new Promise((resolve) => (settle = resolve));
     },
   };

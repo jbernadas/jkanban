@@ -374,4 +374,7 @@ input.tab-rename {
 .confirm { width: min(400px, calc(100vw - 32px)); }
 .confirm h2 { overflow-wrap: anywhere; }
 .confirm-message { margin: 0; color: var(--muted); }
+.confirm label[hidden] { display: none; }
+.confirm label strong { color: var(--text); overflow-wrap: anywhere; }
+button.danger.solid:disabled { opacity: 0.45; cursor: not-allowed; }
 button.danger.solid { background: var(--danger); border-color: var(--danger); color: var(--on-danger); }
