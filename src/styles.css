@@ -15,9 +15,10 @@
   --shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
   --shadow-lift: 0 8px 20px rgba(0, 0, 0, 0.4);
   --radius: 10px;
-  /* Sticky-note cards stay yellow with dark ink. */
-  --note: #fff176;
-  --note-edge: #fbe05a;
+  /* Sticky-note cards: yellow by default; other tabs get their own
+     colour below. Always light paper with dark ink. */
+  --note: #fff59d;
+  --note-edge: #fff176;
   --note-ink: #3b3300;
   --note-muted: #6b5e12;
   --note-shadow: 2px 3px 6px rgba(60, 50, 0, 0.22);
@@ -26,6 +27,15 @@
   color-scheme: dark;
   font: 14px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 }
+
+/* Note colours for tabs after the first, in tab order (NOTE_COLORS). */
+:root[data-note="peach"]    { --note: #ffccbc; --note-edge: #ffab91; --note-ink: #4a1c0c; --note-muted: #7a3a22; }
+:root[data-note="pink"]     { --note: #f8bbd0; --note-edge: #f48fb1; --note-ink: #4a1030; --note-muted: #7a2c52; }
+:root[data-note="green"]    { --note: #c5e1a5; --note-edge: #aed581; --note-ink: #1f3a0a; --note-muted: #3f5f22; }
+:root[data-note="blue"]     { --note: #b3e5fc; --note-edge: #81d4fa; --note-ink: #0b3550; --note-muted: #2a5774; }
+:root[data-note="orange"]   { --note: #ffcc80; --note-edge: #ffb74d; --note-ink: #4a2600; --note-muted: #75430f; }
+:root[data-note="lavender"] { --note: #d1c4e9; --note-edge: #b39ddb; --note-ink: #2e1a52; --note-muted: #4f3a78; }
+:root[data-note="mint"]     { --note: #b2dfdb; --note-edge: #80cbc4; --note-ink: #0d3b36; --note-muted: #2b5c56; }
 
 * { box-sizing: border-box; }
 
@@ -320,7 +330,7 @@ input.tab-rename {
     border-color: unset;
     border: 1px solid var(--border);
     background: var(--card);
-    color: black;
+    color: white !important;
 }
 
 .composer { margin-top: 6px; display: flex; flex-direction: column; gap: 6px; }

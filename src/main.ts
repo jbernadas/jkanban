@@ -3,6 +3,7 @@ import {
   Card,
   Column,
   MAX_PROJECTS,
+  NOTE_COLORS,
   Project,
   Workspace,
   createProject,
@@ -610,6 +611,10 @@ function render() {
   );
   const boardEl = h("main", { class: "board" }, ...board.columns.map(renderColumn), addColumnBtn);
   wireBoardDropTarget(boardEl, addColumnBtn);
+
+  // Set on the root so cards moved outside the board (e.g. while dragging) keep the colour.
+  const index = workspace.projects.indexOf(board);
+  document.documentElement.dataset.note = NOTE_COLORS[index % NOTE_COLORS.length];
 
   const scroll = app.querySelector(".board")?.scrollLeft ?? 0;
   app.replaceChildren(renderTabBar(), boardEl);

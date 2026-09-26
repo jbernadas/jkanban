@@ -25,6 +25,10 @@ export interface Workspace {
 
 export const MAX_PROJECTS = 8;
 
+/** Sticky-note colour for each tab position, so projects are easy to tell
+    apart. The first is always yellow. Styled in styles.css. */
+export const NOTE_COLORS = ["yellow", "peach", "pink", "green", "blue", "orange", "lavender", "mint"] as const;
+
 export const uid = (): string => crypto.randomUUID();
 
 export function createProject(name: string): Project {
