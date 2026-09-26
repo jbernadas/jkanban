@@ -1,45 +1,30 @@
 :root {
-  --bg: #f3f4f7;
-  --surface: #e7e9ef;
-  --card: #ffffff;
-  --text: #1c1f26;
-  --muted: #646b7a;
-  --border: #d5d8e0;
-  --accent: #4f46e5;
-  --accent-soft: rgba(79, 70, 229, 0.12);
-  --danger: #d23a3a;
-  --on-danger: #fff;
-  --shadow: 0 1px 2px rgba(20, 24, 40, 0.08), 0 1px 1px rgba(20, 24, 40, 0.04);
-  --shadow-lift: 0 8px 20px rgba(20, 24, 40, 0.14);
+  /* A fixed mid dark grey palette, independent of the OS/GTK theme, so the
+     app looks the same on every desktop. Mid grey rather than near-black,
+     so the window stands out against other dark-themed windows. */
+  --bg: #3b3e45;
+  --surface: #4a4e57;
+  --card: #585d67;
+  --text: #f0f2f5;
+  --muted: #c0c5ce;
+  --border: #6b707b;
+  --accent: #a5a0ff;
+  --accent-soft: rgba(165, 160, 255, 0.2);
+  --danger: #ff8080;
+  --on-danger: #2b0a0a;
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-lift: 0 8px 20px rgba(0, 0, 0, 0.4);
   --radius: 10px;
-  /* Sticky-note cards stay yellow with dark ink in both themes. */
+  /* Sticky-note cards stay yellow with dark ink. */
   --note: #fff176;
   --note-edge: #fbe05a;
   --note-ink: #3b3300;
   --note-muted: #6b5e12;
   --note-shadow: 2px 3px 6px rgba(60, 50, 0, 0.22);
   --note-shadow-lift: 4px 10px 18px rgba(60, 50, 0, 0.3);
-  color-scheme: light dark;
+  /* Dark native controls (scrollbars, inputs) regardless of OS theme. */
+  color-scheme: dark;
   font: 14px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    /* Mid dark grey rather than near-black, so the window stands out
-       against other dark-themed windows. */
-    --bg: #3b3e45;
-    --surface: #4a4e57;
-    --card: #585d67;
-    --text: #f0f2f5;
-    --muted: #c0c5ce;
-    --border: #6b707b;
-    --accent: #a5a0ff;
-    --accent-soft: rgba(165, 160, 255, 0.2);
-    --danger: #ff8080;
-    --on-danger: #2b0a0a;
-    --shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
-    --shadow-lift: 0 8px 20px rgba(0, 0, 0, 0.4);
-  }
 }
 
 * { box-sizing: border-box; }
@@ -76,8 +61,27 @@ button.danger { color: var(--danger); }
   padding-right: 20px;
   /* The baseline is painted as a background (not a border) so the open tab can cover it. */
   background: linear-gradient(to top, var(--border) 1px, transparent 1px);
+  position: relative;
+}
+/* The baseline glows like the open tab, so the board reads as the front
+   folder floating with its tab. Sits beneath the tabs so the open tab
+   still breaks the line. */
+.tabbar::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 1px;
+  /* Spread makes up for the line being far thinner than the tab. */
+  box-shadow: 0 -3px 12px 1px var(--accent);
+  /* Glow upward only: the board below the baseline stays unlit. */
+  clip-path: inset(-30px 0 0 0);
+  pointer-events: none;
 }
 .tabs {
+  position: relative;
+  z-index: 1;
   flex: 1;
   min-width: 0;
   display: flex;
@@ -306,11 +310,18 @@ input.tab-rename {
   font-size: 15px;
   line-height: 1;
 }
-.add-tile:hover:not(:disabled) { color: var(--accent); box-shadow: var(--shadow); }
+.add-tile:hover:not(:disabled) { color: var(--accent); }
 .add-tile:disabled { opacity: 0.45; cursor: not-allowed; }
 .add-column { flex: 0 0 40px; height: 25px; margin-left: -2px; }
 /* Floats beside the tabs, clear of the baseline, rather than being a tab itself. */
-.add-tab { flex: 0 0 30px; height: 20px; align-self: center; margin-left: 6px; }
+.add-tab { flex: 0 0 30px; height: 20px; align-self: center; margin-left: 6px; box-shadow: 0px 2px 8px 1px #77799f; border: 1px solid var(--border); }
+
+.add-tab:hover {
+    border-color: unset;
+    border: 1px solid var(--border);
+    background: var(--card);
+    color: black;
+}
 
 .composer { margin-top: 6px; display: flex; flex-direction: column; gap: 6px; }
 .composer textarea {

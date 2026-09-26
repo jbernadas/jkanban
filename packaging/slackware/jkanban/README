@@ -10,4 +10,8 @@ The second download is upstream's vendor tarball: the Rust crates the
 program depends on, plus its prebuilt web interface. With it, the
 build needs neither network access nor Node.js.
 
-webkit2gtk4.1 and its dependencies take a long time to build.
+webkit2gtk4.1 and its dependencies take a long time to build. Some of
+them need the official Slackware 15.0 patches (for example libsoup3
+needs the patched meson), so apply them first with
+"slackpkg update && slackpkg upgrade-all". Remove the webkit2gtk (4.0
+API) package if it is installed; it conflicts with webkit2gtk4.1.
