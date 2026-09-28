@@ -26,9 +26,12 @@ done
 SRC_MD5=$(md5sum "jkanban/jkanban-$VERSION.tar.gz" | cut -d' ' -f1)
 VENDOR_MD5=$(md5sum "jkanban/jkanban-$VERSION-vendor.tar.xz" | cut -d' ' -f1)
 
-# Keep the maintainer fields as they are.
+# Keep the maintainer fields as they are. Sourcing also brings in the old
+# VERSION, so put ours back afterwards.
+NEW_VERSION=$VERSION
 # shellcheck source=/dev/null
 . jkanban/jkanban.info
+VERSION=$NEW_VERSION
 
 cat > jkanban/jkanban.info <<EOF
 PRGNAM="jkanban"
