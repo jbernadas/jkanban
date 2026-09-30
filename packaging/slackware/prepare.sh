@@ -48,7 +48,9 @@ MAINTAINER="$MAINTAINER"
 EMAIL="$EMAIL"
 EOF
 
-sed -i "s/^VERSION=\${VERSION:-.*}\$/VERSION=\${VERSION:-$VERSION}/" jkanban/jkanban.SlackBuild
+# -i.bak rather than -i, which macOS's sed doesn't accept without a suffix.
+sed -i.bak "s/^VERSION=\${VERSION:-.*}\$/VERSION=\${VERSION:-$VERSION}/" jkanban/jkanban.SlackBuild
+rm jkanban/jkanban.SlackBuild.bak
 
 echo "jkanban.info and jkanban.SlackBuild set to $VERSION; sources are in jkanban/."
 
@@ -57,5 +59,6 @@ if [ "$EMAIL" = "CHANGE-ME" ]; then
   exit 1
 fi
 
-tar -czf jkanban.tar.gz --exclude='*.tar.gz' --exclude='*.tar.xz' jkanban
+# On macOS, keep extended attributes and ._ files out; GNU tar warns about them.
+COPYFILE_DISABLE=1 tar -czf jkanban.tar.gz --no-xattrs --exclude='*.tar.gz' --exclude='*.tar.xz' jkanban
 echo "Upload this to slackbuilds.org: $(pwd)/jkanban.tar.gz"

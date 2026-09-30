@@ -1,10 +1,10 @@
 PRGNAM="jkanban"
-VERSION="0.2.1"
+VERSION="0.2.2"
 HOMEPAGE="https://github.com/jbernadas/jkanban"
-DOWNLOAD="https://github.com/jbernadas/jkanban/archive/v0.2.1/jkanban-0.2.1.tar.gz \
-          https://github.com/jbernadas/jkanban/releases/download/v0.2.1/jkanban-0.2.1-vendor.tar.xz"
-MD5SUM="0dbeded7020e481334ce998e143715b7 \
-        3aa2c93ef196e195fa5d47045dbe174e"
+DOWNLOAD="https://github.com/jbernadas/jkanban/archive/v0.2.2/jkanban-0.2.2.tar.gz \
+          https://github.com/jbernadas/jkanban/releases/download/v0.2.2/jkanban-0.2.2-vendor.tar.xz"
+MD5SUM="35304f08a4ac358cf0273a0f88ca7dae \
+        0191eae1a3fb4d325215239969a48b05"
 DOWNLOAD_x86_64=""
 MD5SUM_x86_64=""
 REQUIRES="rust-opt webkit2gtk4.1"
