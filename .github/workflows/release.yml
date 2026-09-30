@@ -1,8 +1,15 @@
-# Builds the Linux bundles and attaches them to a draft GitHub release.
+# Builds the Linux and macOS bundles and attaches them to a draft GitHub release.
 #
 #   1. Bump "version" in package.json and commit.
 #   2. git tag v<version> && git push origin v<version>
 #   3. Review the draft on GitHub's Releases page, then publish it.
+#
+# The macOS .dmg is ad-hoc signed unless the Apple secrets below are set, in
+# which case it's signed with a Developer ID and, with APPLE_ID too, notarized:
+#   APPLE_CERTIFICATE           base64 of the Developer ID Application .p12
+#   APPLE_CERTIFICATE_PASSWORD  the .p12's password
+#   APPLE_SIGNING_IDENTITY      e.g. "Developer ID Application: Name (TEAMID)"
+#   APPLE_ID, APPLE_PASSWORD, APPLE_TEAM_ID   for notarization (app-specific password)
 
 name: Release
 
@@ -14,10 +21,30 @@ permissions:
   contents: write # to create the release
 
 jobs:
-  release:
+  check:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Check the tag matches package.json
+        id: version
+        run: |
+          version=$(node -p "require('./package.json').version")
+          if [ "$GITHUB_REF_NAME" != "v$version" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME doesn't match package.json version $version"
+            exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+  linux:
+    needs: check
     # Bundles link against the build machine's glibc, so the oldest supported
     # Ubuntu gives builds that run on the widest range of distros.
     runs-on: ubuntu-22.04
+    env:
+      VERSION: ${{ needs.check.outputs.version }}
     steps:
       - uses: actions/checkout@v5
 
@@ -25,15 +52,6 @@ jobs:
         with:
           node-version: 22
           cache: npm
-
-      - name: Check the tag matches package.json
-        run: |
-          version=$(node -p "require('./package.json').version")
-          if [ "$GITHUB_REF_NAME" != "v$version" ]; then
-            echo "::error::Tag $GITHUB_REF_NAME doesn't match package.json version $version"
-            exit 1
-          fi
-          echo "VERSION=$version" >> "$GITHUB_ENV"
 
       # Tauri v2 Linux build deps: https://v2.tauri.app/start/prerequisites/#linux
       - name: Install build dependencies
@@ -69,10 +87,84 @@ jobs:
             --transform "s,^,jkanban-$VERSION/," \
             vendor dist src-tauri/.cargo/config.toml
 
-      - name: Collect files and checksums
+      - name: Collect files
         run: |
           find src-tauri/target/release/bundle -maxdepth 2 \
             \( -name '*.deb' -o -name '*.rpm' -o -name '*.AppImage' \) -exec cp {} out/ \;
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: bundles-linux
+          path: out/*
+          if-no-files-found: error
+
+  macos:
+    needs: check
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+
+      # Both architectures, so one universal .dmg runs on Apple Silicon and Intel Macs.
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-darwin,x86_64-apple-darwin
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - run: npm ci
+
+      - name: Build universal .dmg
+        env:
+          MACOS_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          MACOS_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          MACOS_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          MACOS_APPLE_ID: ${{ secrets.APPLE_ID }}
+          MACOS_APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          MACOS_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        # Tauri signs when APPLE_* are set, so export them only if the secrets
+        # exist. Otherwise "-" ad-hoc signs, which Apple Silicon requires to run at all.
+        run: |
+          if [ -n "$MACOS_CERTIFICATE" ]; then
+            export APPLE_CERTIFICATE="$MACOS_CERTIFICATE"
+            export APPLE_CERTIFICATE_PASSWORD="$MACOS_CERTIFICATE_PASSWORD"
+            export APPLE_SIGNING_IDENTITY="$MACOS_SIGNING_IDENTITY"
+            if [ -n "$MACOS_APPLE_ID" ]; then
+              export APPLE_ID="$MACOS_APPLE_ID"
+              export APPLE_PASSWORD="$MACOS_APPLE_PASSWORD"
+              export APPLE_TEAM_ID="$MACOS_TEAM_ID"
+            fi
+          else
+            export APPLE_SIGNING_IDENTITY="-"
+          fi
+          npx tauri build --target universal-apple-darwin --bundles app,dmg
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: bundles-macos
+          path: src-tauri/target/universal-apple-darwin/release/bundle/dmg/*.dmg
+          if-no-files-found: error
+
+  release:
+    needs: [check, linux, macos]
+    runs-on: ubuntu-latest
+    env:
+      VERSION: ${{ needs.check.outputs.version }}
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: bundles-*
+          path: out
+          merge-multiple: true
+
+      - name: Checksums
+        run: |
           cd out
           sha256sum -- * > SHA256SUMS
           cat SHA256SUMS
@@ -82,6 +174,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release create "$GITHUB_REF_NAME" out/* \
+            --repo "$GITHUB_REPOSITORY" \
             --draft \
             --title "jKanban $VERSION" \
             --generate-notes

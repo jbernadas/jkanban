@@ -1,15 +1,25 @@
 # jKanban
 
-A simple desktop kanban board for Linux, with yellow sticky-note cards.
+A simple desktop kanban board for Linux and macOS, with yellow sticky-note cards.
 
 - Up to 8 projects, each on its own tab. Click + to add one, double-click a tab to rename it.
 - Drag cards between and within columns; drag a column by its header to reorder.
 - Click a card (or press Enter) to edit or delete it. Alt + arrow keys move a focused card.
-- Your boards are saved to `~/.local/share/com.jbernadas.jkanban/board.json`.
+- Your boards are saved to `~/.local/share/com.jbernadas.jkanban/board.json` on Linux and `~/Library/Application Support/com.jbernadas.jkanban/board.json` on macOS.
 
 ## Install
 
-Download the file for your distro from the [latest release](https://github.com/jbernadas/jkanban/releases/latest). jKanban needs a 64-bit distro from about 2022 or later (for example Ubuntu 22.04, Debian 12, or a current Fedora).
+Download the file for your system from the [latest release](https://github.com/jbernadas/jkanban/releases/latest). On Linux, jKanban needs a 64-bit distro from about 2022 or later (for example Ubuntu 22.04, Debian 12, or a current Fedora).
+
+### macOS (.dmg)
+
+`jkanban_<version>_universal.dmg` runs on both Apple Silicon and Intel Macs. Open it and drag **jkanban** into **Applications**.
+
+The app isn't signed with an Apple Developer ID, so the first time you open it macOS says it can't verify the developer. Click **Done**, then go to **System Settings → Privacy & Security**, scroll down and click **Open Anyway** next to the jkanban message. You only need to do this once. Or, from a terminal:
+
+```sh
+xattr -dr com.apple.quarantine /Applications/jkanban.app
+```
 
 ### Debian, Ubuntu, Linux Mint (.deb)
 
@@ -47,11 +57,11 @@ Each release has a `SHA256SUMS` file. Download it next to the file you picked, t
 sha256sum -c SHA256SUMS --ignore-missing
 ```
 
-It should print `OK` for your file.
+It should print `OK` for your file. On macOS, run `grep dmg SHA256SUMS | shasum -a 256 -c` instead.
 
 ## Update
 
-Download the newer release and install it the same way. It replaces the old version, and your boards are kept. With the AppImage, just use the new file.
+Download the newer release and install it the same way. It replaces the old version, and your boards are kept. With the AppImage, just use the new file. On macOS, drag the new version into Applications and choose **Replace**.
 
 ## Remove
 
@@ -60,12 +70,13 @@ sudo apt remove jkanban    # .deb
 sudo dnf remove jkanban    # .rpm (openSUSE: sudo zypper remove jkanban)
 ```
 
-For the AppImage, delete the file.
+For the AppImage, delete the file. On macOS, drag `jkanban` from Applications to the Trash.
 
 Removing the app keeps your boards. To delete them too:
 
 ```sh
-rm -rf ~/.local/share/com.jbernadas.jkanban
+rm -rf ~/.local/share/com.jbernadas.jkanban                        # Linux
+rm -rf ~/Library/Application\ Support/com.jbernadas.jkanban         # macOS
 ```
 
 ## Troubleshooting
@@ -86,6 +97,19 @@ This writes `.deb`, `.rpm` and `.AppImage` bundles to `release/`. To build only 
 
 apt and dnf skip a package whose version is already installed, so bump `version` in `package.json` before rebuilding. To reinstall a build without changing the version, use `sudo apt install --reinstall ./<file>.deb` or `sudo dnf reinstall ./<file>.rpm`.
 
+### On macOS
+
+Needs the Xcode Command Line Tools (`xcode-select --install`), [Rust](https://rustup.rs) and Node.js 22 or later. Then:
+
+```sh
+npm ci
+npx tauri build --bundles app,dmg
+```
+
+This writes `jkanban.app` to `src-tauri/target/release/bundle/macos/` and a `.dmg` to `src-tauri/target/release/bundle/dmg/`. Copy the app into Applications. A build made on your own Mac isn't quarantined, so macOS opens it without a warning.
+
+For a universal build like the release's, run `rustup target add aarch64-apple-darwin x86_64-apple-darwin` once, then `npx tauri build --target universal-apple-darwin --bundles app,dmg`. The output lands under `src-tauri/target/universal-apple-darwin/release/bundle/`.
+
 ### Offline
 
 Each release also has `jkanban-<version>-vendor.tar.xz`, for builds without network access (such as distro packaging). It holds the Rust dependencies and the prebuilt web UI, so Node isn't needed. Extract it over the release's source tarball (both unpack to `jkanban-<version>/`), install the [Tauri Linux prerequisites](https://v2.tauri.app/start/prerequisites/#linux) and Rust, then:
@@ -100,16 +124,18 @@ The program is `target/release/jkanban`. `src-tauri/jkanban.desktop` is its app-
 ### Develop locally
 
 `npm run dev` serves the UI in a browser at http://localhost:1420, saving to localStorage.
-`npm run tauri dev` runs the real desktop app; it needs the Rust toolchain and the [Tauri Linux prerequisites](https://v2.tauri.app/start/prerequisites/#linux).
+`npm run tauri dev` runs the real desktop app; it needs the Rust toolchain and the [Tauri prerequisites](https://v2.tauri.app/start/prerequisites/) for your system.
 
 ## Releasing
 
-Pushing a version tag builds the bundles on GitHub and attaches them to a draft release (see `.github/workflows/release.yml`):
+Pushing a version tag builds the Linux and macOS bundles on GitHub and attaches them to a draft release (see `.github/workflows/release.yml`):
 
 1. Bump `version` in `package.json` and commit.
 2. `git tag v<version> && git push origin main v<version>`. The tag must match `package.json`, or the build stops.
 3. When the workflow finishes, open the draft on the [Releases page](https://github.com/jbernadas/jkanban/releases), check it, and click **Publish release**.
 4. For SlackBuilds.org, once the release is published: run `packaging/slackware/prepare.sh <version>`, test-build on Slackware 15.0 with `packaging/slackware/jkanban/jkanban.SlackBuild` (as root), then upload `packaging/slackware/jkanban.tar.gz` through the form on slackbuilds.org.
+
+The macOS `.dmg` is only ad-hoc signed. To sign it with a Developer ID and notarize it, add the `APPLE_*` repository secrets listed at the top of `release.yml`; the workflow picks them up automatically. With them set, the Gatekeeper steps under [macOS](#macos-dmg) aren't needed.
 
 ## License
 
