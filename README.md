@@ -95,7 +95,7 @@ npm run docker:build
 
 This writes `.deb`, `.rpm` and `.AppImage` bundles to `release/`. To build only some of them, e.g. if GitHub is down (the AppImage step downloads tools from it), run `docker build --build-arg BUNDLES=deb,rpm --target export --output type=local,dest=release .` Rust and npm caches persist between builds, so rebuilds are much faster.
 
-apt and dnf skip a package whose version is already installed, so bump `version` in `package.json` before rebuilding. To reinstall a build without changing the version, use `sudo apt install --reinstall ./<file>.deb` or `sudo dnf reinstall ./<file>.rpm`.
+apt and dnf skip a package whose version is already installed, so bump the version (see [Releasing](#releasing)) before rebuilding. To reinstall a build without changing the version, use `sudo apt install --reinstall ./<file>.deb` or `sudo dnf reinstall ./<file>.rpm`.
 
 ### On macOS
 
@@ -130,7 +130,7 @@ The program is `target/release/jkanban`. `src-tauri/jkanban.desktop` is its app-
 
 Pushing a version tag builds the Linux and macOS bundles on GitHub and attaches them to a draft release (see `.github/workflows/release.yml`):
 
-1. Bump `version` in `package.json` and commit.
+1. Bump the version with `npm version patch --no-git-tag-version` (or `minor`, or an exact version such as `0.4.0`), then commit. This updates `package.json` and `package-lock.json` together. Don't use `npm update` for this: it upgrades dependencies instead. If you edited `package.json` by hand, run `npm install --package-lock-only` to sync the lockfile.
 2. `git tag v<version> && git push origin main v<version>`. The tag must match `package.json`, or the build stops.
 3. When the workflow finishes, open the draft on the [Releases page](https://github.com/jbernadas/jkanban/releases), check it, and click **Publish release**.
 4. For SlackBuilds.org, once the release is published: run `packaging/slackware/prepare.sh <version>`, test-build on Slackware 15.0 with `packaging/slackware/jkanban/jkanban.SlackBuild` (as root), then upload `packaging/slackware/jkanban.tar.gz` through the form on slackbuilds.org.
